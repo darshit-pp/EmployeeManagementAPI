@@ -16,7 +16,7 @@ namespace EmployeeManagementAPI.Controllers
         }
 
         /// <summary>
-        /// Get all departments
+        /// Get all departments with employee count
         /// </summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetDepartments()

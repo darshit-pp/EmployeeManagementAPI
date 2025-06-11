@@ -1,88 +1,104 @@
-using Microsoft.EntityFrameworkCore;
-using EmployeeManagementAPI.Data;
-using EmployeeManagementAPI.Models;
+using EmployeeManagementAPI.Common.Helper;
 using EmployeeManagementAPI.DTOs;
+using EmployeeManagementAPI.Models;
 
 namespace EmployeeManagementAPI.Services
 {
     public class DepartmentService : IDepartmentService
     {
-        private readonly EmployeeManagementContext _context;
+        private readonly string _connectionString;
 
-        public DepartmentService(EmployeeManagementContext context)
+        public DepartmentService(IConfiguration configuration)
         {
-            _context = context;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string not found");
         }
 
         public async Task<IEnumerable<DepartmentDto>> GetAllDepartmentsAsync()
         {
-            return await _context.Departments
-                .Select(d => new DepartmentDto
+            return await Task.Run(() =>
+            {
+                using var dbManager = new DatabaseManager(_connectionString);
+                var departments = dbManager.ExecuteSp<Department>("sp_GetAllDepartments");
+
+                return departments.Select(d => new DepartmentDto
                 {
                     DepartmentId = d.DepartmentId,
                     Name = d.Name,
-                    EmployeeCount = d.Employees.Count
-                })
-                .ToListAsync();
+                    EmployeeCount = d.EmployeeCount
+                });
+            });
         }
 
         public async Task<DepartmentDto?> GetDepartmentByIdAsync(int id)
         {
-            var department = await _context.Departments
-                .Include(d => d.Employees)
-                .FirstOrDefaultAsync(d => d.DepartmentId == id);
-
-            if (department == null) return null;
-
-            return new DepartmentDto
+            return await Task.Run(() =>
             {
-                DepartmentId = department.DepartmentId,
-                Name = department.Name,
-                EmployeeCount = department.Employees.Count
-            };
+                using var dbManager = new DatabaseManager(_connectionString);
+                var parameters = new Dapper.DynamicParameters();
+                parameters.Add("@DepartmentId", id);
+
+                var department = dbManager.ExecuteSp<Department>("sp_GetDepartmentById", parameters).FirstOrDefault();
+
+                if (department == null) return null;
+
+                return new DepartmentDto
+                {
+                    DepartmentId = department.DepartmentId,
+                    Name = department.Name,
+                    EmployeeCount = department.EmployeeCount
+                };
+            });
         }
 
         public async Task<DepartmentDto> CreateDepartmentAsync(CreateDepartmentDto createDepartmentDto)
         {
-            var department = new Department
+            return await Task.Run(() =>
             {
-                Name = createDepartmentDto.Name
-            };
+                using var dbManager = new DatabaseManager(_connectionString);
+                var parameters = new Dapper.DynamicParameters();
+                parameters.Add("@Name", createDepartmentDto.Name);
 
-            _context.Departments.Add(department);
-            await _context.SaveChangesAsync();
+                var departmentId = dbManager.ExecuteSp<int>("sp_CreateDepartment", parameters).FirstOrDefault();
 
-            return new DepartmentDto
-            {
-                DepartmentId = department.DepartmentId,
-                Name = department.Name,
-                EmployeeCount = 0
-            };
+                return new DepartmentDto
+                {
+                    DepartmentId = departmentId,
+                    Name = createDepartmentDto.Name,
+                    EmployeeCount = 0
+                };
+            });
         }
 
         public async Task<DepartmentDto?> UpdateDepartmentAsync(int id, UpdateDepartmentDto updateDepartmentDto)
         {
-            var department = await _context.Departments.FindAsync(id);
-            if (department == null) return null;
+            return await Task.Run(() =>
+            {
+                using var dbManager = new DatabaseManager(_connectionString);
+                var parameters = new Dapper.DynamicParameters();
+                parameters.Add("@DepartmentId", id);
+                parameters.Add("@Name", updateDepartmentDto.Name);
 
-            department.Name = updateDepartmentDto.Name;
-            await _context.SaveChangesAsync();
+                var rowsAffected = dbManager.ExecuteSp<int>("sp_UpdateDepartment", parameters).FirstOrDefault();
 
-            return await GetDepartmentByIdAsync(id);
+                if (rowsAffected == 0) return null;
+
+                return GetDepartmentByIdAsync(id).Result;
+            });
         }
 
         public async Task<bool> DeleteDepartmentAsync(int id)
         {
-            var department = await _context.Departments.FindAsync(id);
-            if (department == null) return false;
+            return await Task.Run(() =>
+            {
+                using var dbManager = new DatabaseManager(_connectionString);
+                var parameters = new Dapper.DynamicParameters();
+                parameters.Add("@DepartmentId", id);
 
-            // Check if department has employees
-            var hasEmployees = await _context.Employees.AnyAsync(e => e.DepartmentId == id);
-            if (hasEmployees) return false; // Cannot delete department with employees
+                var result = dbManager.ExecuteSp<dynamic>("sp_DeleteDepartment", parameters).FirstOrDefault();
 
-            _context.Departments.Remove(department);
-            await _context.SaveChangesAsync();
-            return true;
+                return result?.CanDelete == 1;
+            });
         }
     }
 }

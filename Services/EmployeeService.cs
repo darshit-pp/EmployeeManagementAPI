@@ -1,105 +1,123 @@
-using Microsoft.EntityFrameworkCore;
-using EmployeeManagementAPI.Data;
-using EmployeeManagementAPI.Models;
+using EmployeeManagementAPI.Common.Helper;
 using EmployeeManagementAPI.DTOs;
-using EmployeeManagementAPI.Services;
+using EmployeeManagementAPI.Models;
 
 namespace EmployeeManagementAPI.Services
 {
     public class EmployeeService : IEmployeeService
     {
-        private readonly EmployeeManagementContext _context;
+        private readonly string _connectionString;
 
-        public EmployeeService(EmployeeManagementContext context)
+        public EmployeeService(IConfiguration configuration)
         {
-            _context = context;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string not found");
         }
 
         public async Task<IEnumerable<EmployeeDto>> GetAllEmployeesAsync()
         {
-            return await _context.Employees
-                .Include(e => e.Department)
-                .Select(e => new EmployeeDto
+            return await Task.Run(() =>
+            {
+                using var dbManager = new DatabaseManager(_connectionString);
+                var employees = dbManager.ExecuteSp<Employee>("sp_GetAllEmployees");
+
+                return employees.Select(e => new EmployeeDto
                 {
                     EmployeeId = e.EmployeeId,
                     Name = e.Name,
                     Email = e.Email,
                     DepartmentId = e.DepartmentId,
-                    DepartmentName = e.Department.Name,
+                    DepartmentName = e.DepartmentName,
                     Role = e.Role,
                     Salary = e.Salary,
                     Status = e.Status,
                     JoiningDate = e.JoiningDate
-                })
-                .ToListAsync();
+                });
+            });
         }
 
         public async Task<EmployeeDto?> GetEmployeeByIdAsync(int id)
         {
-            var employee = await _context.Employees
-                .Include(e => e.Department)
-                .FirstOrDefaultAsync(e => e.EmployeeId == id);
-
-            if (employee == null) return null;
-
-            return new EmployeeDto
+            return await Task.Run(() =>
             {
-                EmployeeId = employee.EmployeeId,
-                Name = employee.Name,
-                Email = employee.Email,
-                DepartmentId = employee.DepartmentId,
-                DepartmentName = employee.Department.Name,
-                Role = employee.Role,
-                Salary = employee.Salary,
-                Status = employee.Status,
-                JoiningDate = employee.JoiningDate
-            };
+                using var dbManager = new DatabaseManager(_connectionString);
+                var parameters = new Dapper.DynamicParameters();
+                parameters.Add("@EmployeeId", id);
+
+                var employee = dbManager.ExecuteSp<Employee>("sp_GetEmployeeById", parameters).FirstOrDefault();
+
+                if (employee == null) return null;
+
+                return new EmployeeDto
+                {
+                    EmployeeId = employee.EmployeeId,
+                    Name = employee.Name,
+                    Email = employee.Email,
+                    DepartmentId = employee.DepartmentId,
+                    DepartmentName = employee.DepartmentName,
+                    Role = employee.Role,
+                    Salary = employee.Salary,
+                    Status = employee.Status,
+                    JoiningDate = employee.JoiningDate
+                };
+            });
         }
 
         public async Task<EmployeeDto> CreateEmployeeAsync(CreateEmployeeDto createEmployeeDto)
         {
-            var employee = new Employee
+            return await Task.Run(() =>
             {
-                Name = createEmployeeDto.Name,
-                Email = createEmployeeDto.Email,
-                DepartmentId = createEmployeeDto.DepartmentId,
-                Role = createEmployeeDto.Role,
-                Salary = createEmployeeDto.Salary,
-                Status = createEmployeeDto.Status,
-                JoiningDate = createEmployeeDto.JoiningDate
-            };
+                using var dbManager = new DatabaseManager(_connectionString);
+                var parameters = new Dapper.DynamicParameters();
+                parameters.Add("@Name", createEmployeeDto.Name);
+                parameters.Add("@Email", createEmployeeDto.Email);
+                parameters.Add("@DepartmentId", createEmployeeDto.DepartmentId);
+                parameters.Add("@Role", createEmployeeDto.Role);
+                parameters.Add("@Salary", createEmployeeDto.Salary);
+                parameters.Add("@Status", createEmployeeDto.Status);
+                parameters.Add("@JoiningDate", createEmployeeDto.JoiningDate);
 
-            _context.Employees.Add(employee);
-            await _context.SaveChangesAsync();
+                var employeeId = dbManager.ExecuteSp<int>("sp_CreateEmployee", parameters).FirstOrDefault();
 
-            return await GetEmployeeByIdAsync(employee.EmployeeId) ?? throw new InvalidOperationException();
+                return GetEmployeeByIdAsync(employeeId).Result ?? throw new InvalidOperationException();
+            });
         }
 
         public async Task<EmployeeDto?> UpdateEmployeeAsync(int id, UpdateEmployeeDto updateEmployeeDto)
         {
-            var employee = await _context.Employees.FindAsync(id);
-            if (employee == null) return null;
+            return await Task.Run(() =>
+            {
+                using var dbManager = new DatabaseManager(_connectionString);
+                var parameters = new Dapper.DynamicParameters();
+                parameters.Add("@EmployeeId", id);
+                parameters.Add("@Name", updateEmployeeDto.Name);
+                parameters.Add("@Email", updateEmployeeDto.Email);
+                parameters.Add("@DepartmentId", updateEmployeeDto.DepartmentId);
+                parameters.Add("@Role", updateEmployeeDto.Role);
+                parameters.Add("@Salary", updateEmployeeDto.Salary);
+                parameters.Add("@Status", updateEmployeeDto.Status);
+                parameters.Add("@JoiningDate", updateEmployeeDto.JoiningDate);
 
-            employee.Name = updateEmployeeDto.Name;
-            employee.Email = updateEmployeeDto.Email;
-            employee.DepartmentId = updateEmployeeDto.DepartmentId;
-            employee.Role = updateEmployeeDto.Role;
-            employee.Salary = updateEmployeeDto.Salary;
-            employee.Status = updateEmployeeDto.Status;
-            employee.JoiningDate = updateEmployeeDto.JoiningDate;
+                var rowsAffected = dbManager.ExecuteSp<int>("sp_UpdateEmployee", parameters).FirstOrDefault();
 
-            await _context.SaveChangesAsync();
-            return await GetEmployeeByIdAsync(id);
+                if (rowsAffected == 0) return null;
+
+                return GetEmployeeByIdAsync(id).Result;
+            });
         }
 
         public async Task<bool> DeleteEmployeeAsync(int id)
         {
-            var employee = await _context.Employees.FindAsync(id);
-            if (employee == null) return false;
+            return await Task.Run(() =>
+            {
+                using var dbManager = new DatabaseManager(_connectionString);
+                var parameters = new Dapper.DynamicParameters();
+                parameters.Add("@EmployeeId", id);
 
-            _context.Employees.Remove(employee);
-            await _context.SaveChangesAsync();
-            return true;
+                var rowsAffected = dbManager.ExecuteSp<int>("sp_DeleteEmployee", parameters).FirstOrDefault();
+
+                return rowsAffected > 0;
+            });
         }
     }
 }

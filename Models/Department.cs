@@ -1,17 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace EmployeeManagementAPI.Models
+﻿namespace EmployeeManagementAPI.Models
 {
-    public partial class Department
+    public class Department
     {
-        public Department()
-        {
-            Employees = new HashSet<Employee>();
-        }
-
         public int DepartmentId { get; set; }
-        public string Name { get; set; } = null!;
-
-        public virtual ICollection<Employee> Employees { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int EmployeeCount { get; set; }
     }
 }
