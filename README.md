@@ -192,8 +192,6 @@ curl -X POST "https://your-api-domain.com/api/departments" \
 
 </details>
 
----
-
 ## 💾 Database Schema
 
 <div align="center">
@@ -220,6 +218,56 @@ erDiagram
 ```
 
 </div>
+
+<details>
+<summary><b> Database Queries </b></summary>
+  
+```sql
+-- Create Database
+CREATE DATABASE EmployeeManagementDB;
+GO
+
+USE EmployeeManagementDB;
+GO
+
+-- Create Department Table
+CREATE TABLE Department (
+    DepartmentId INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL
+);
+GO
+
+-- Create Employee Table
+CREATE TABLE Employee (
+    EmployeeId INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL,
+    Email NVARCHAR(100) NOT NULL UNIQUE,
+    DepartmentId INT NOT NULL,
+    Role NVARCHAR(50) NOT NULL,
+    Salary DECIMAL(18,2) NOT NULL,
+    Status BIT NOT NULL DEFAULT 1,
+    JoiningDate DATETIME NOT NULL,
+    FOREIGN KEY (DepartmentId) REFERENCES Department(DepartmentId)
+);
+GO
+
+-- Insert Sample Data
+INSERT INTO Department (Name) VALUES 
+('Information Technology'),
+('Human Resources'),
+('Finance'),
+('Marketing');
+GO
+
+INSERT INTO Employee (Name, Email, DepartmentId, Role, Salary, Status, JoiningDate) VALUES 
+('John Doe', 'john.doe@company.com', 1, 'Software Developer', 75000.00, 1, '2023-01-15'),
+('Jane Smith', 'jane.smith@company.com', 2, 'HR Manager', 65000.00, 1, '2022-03-20'),
+('Mike Johnson', 'mike.johnson@company.com', 1, 'Senior Developer', 85000.00, 1, '2021-11-10'),
+('Sarah Wilson', 'sarah.wilson@company.com', 3, 'Financial Analyst', 60000.00, 1, '2023-05-08');
+GO
+---
+```
+</details>
 
 ### Table Details
 
@@ -248,64 +296,6 @@ erDiagram
 | JoiningDate | DATETIME | NOT NULL |
 
 </details>
-
----
-
-## 🌐 Deployment
-
-### 🚀 Live Demo
-
-The API is deployed and accessible at:
-
-- **🌍 Live API**: [https://your-api-domain.com](https://your-api-domain.com)
-- **📖 Interactive Docs**: [https://your-api-domain.com/swagger](https://your-api-domain.com/swagger)
-- **❤️ Health Check**: [https://your-api-domain.com/health](https://your-api-domain.com/health)
-
-### Deploy Your Own
-
-<details>
-<summary><b>🔥 Deploy to Render (Free)</b></summary>
-
-1. Fork this repository
-2. Sign up at [Render.com](https://render.com)
-3. Create new Web Service
-4. Connect your GitHub repo
-5. Add environment variables:
-   - `DATABASE_URL`: Your connection string
-6. Deploy automatically!
-
-</details>
-
-<details>
-<summary><b>☁️ Deploy to Azure</b></summary>
-
-```bash
-# Azure CLI deployment
-az group create --name EmployeeAPI --location "East US"
-az appservice plan create --name EmployeeAPIPlan --resource-group EmployeeAPI --sku FREE
-az webapp create --resource-group EmployeeAPI --plan EmployeeAPIPlan --name your-unique-name --runtime "DOTNET|8.0"
-```
-
-</details>
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-
-### 🎯 Swagger UI - Interactive API Documentation
-![Swagger UI](https://via.placeholder.com/800x400/2196F3/ffffff?text=Swagger+UI+Screenshot)
-
-### 📊 API Response - Employee List
-![API Response](https://via.placeholder.com/800x300/4CAF50/ffffff?text=JSON+Response+Screenshot)
-
-### 🗄️ Database Schema Visualization
-![Database Schema](https://via.placeholder.com/600x400/FF9800/ffffff?text=Database+Schema+Diagram)
-
-</div>
-
----
 
 ## 🧪 Testing
 
