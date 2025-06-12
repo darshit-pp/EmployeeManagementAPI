@@ -11,28 +11,39 @@ import {
   DollarSign, 
   Calendar, 
   Clock,
-  Edit,
-  X
+  Edit
 } from 'lucide-react';
-import { formatCurrency, formatDate, 
-    // formatDateTime 
-} from '@/utils/formatters';
 
 const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
   if (!employee) return null;
 
-  // eslint-disable-next-line no-unused-vars
   const InfoRow = ({ icon: Icon, label, value, className = "" }) => (
-    <div className="flex items-center space-x-3 py-2">
-      <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-        <Icon className="h-4 w-4 text-gray-600" />
+    <div className="flex items-center space-x-3 py-3">
+      <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+        <Icon className="h-5 w-5 text-slate-600" />
       </div>
       <div className="flex-1">
-        <div className="text-sm text-gray-500">{label}</div>
-        <div className={`font-medium ${className}`}>{value}</div>
+        <div className="text-sm text-slate-500">{label}</div>
+        <div className={`font-medium text-slate-900 ${className}`}>{value}</div>
       </div>
     </div>
   );
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
   const calculateTenure = (joiningDate) => {
     const start = new Date(joiningDate);
@@ -57,32 +68,30 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+      <DialogContent className="w-full max-w-[50rem] max-h-[90vh] overflow-y-auto bg-white border-slate-200 shadow-xl">
+        <DialogHeader className="border-b  border-slate-100 pb-4">
+          <DialogTitle className="flex items-center justify-between text-xl font-semibold text-slate-900">
             <span>Employee Details</span>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={() => onEdit?.(employee)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" className="mr-6 cursor-pointer " onClick={() => onEdit?.(employee)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pt-4">
           {/* Profile Header */}
-          <Card>
+          <Card className="bg-gradient-to-r from-primary-50 to-indigo-50 border-primary-200">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-primary font-bold text-2xl">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-2xl">
                     {employee.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900">{employee.name}</h2>
-                  <p className="text-lg text-gray-600">{employee.role}</p>
+                  <h2 className="text-2xl font-bold text-slate-900">{employee.name}</h2>
+                  <p className="text-lg text-slate-600">{employee.role}</p>
                   <div className="flex items-center space-x-2 mt-2">
                     <Badge variant={employee.status ? "default" : "secondary"}>
                       {employee.status ? "Active" : "Inactive"}
@@ -96,9 +105,9 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Contact Information */}
-            <Card>
+            <Card className="border-slate-200">
               <CardHeader>
-                <CardTitle className="text-lg">Contact Information</CardTitle>
+                <CardTitle className="text-lg text-slate-900">Contact Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-1">
                 <InfoRow 
@@ -110,15 +119,15 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
                   icon={Mail} 
                   label="Email Address" 
                   value={employee.email}
-                  className="text-blue-600"
+                  className="text-primary-600"
                 />
               </CardContent>
             </Card>
 
             {/* Job Information */}
-            <Card>
+            <Card className="border-slate-200">
               <CardHeader>
-                <CardTitle className="text-lg">Job Information</CardTitle>
+                <CardTitle className="text-lg text-slate-900">Job Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-1">
                 <InfoRow 
@@ -135,16 +144,16 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
                   icon={DollarSign} 
                   label="Salary" 
                   value={formatCurrency(employee.salary)}
-                  className="text-green-600 font-semibold"
+                  className="text-emerald-600 font-semibold"
                 />
               </CardContent>
             </Card>
           </div>
 
           {/* Employment Details */}
-          <Card>
+          <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-lg">Employment Details</CardTitle>
+              <CardTitle className="text-lg text-slate-900">Employment Details</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -163,9 +172,9 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
               <Separator className="my-4" />
               
               <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Employment Status</h4>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-600">Current Status</span>
+                <h4 className="font-medium text-slate-900">Employment Status</h4>
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <span className="text-sm text-slate-600">Current Status</span>
                   <Badge variant={employee.status ? "default" : "secondary"} className="text-sm">
                     {employee.status ? "Active Employee" : "Inactive Employee"}
                   </Badge>
@@ -175,9 +184,9 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
           </Card>
 
           {/* Quick Actions */}
-          <Card>
+          <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
+              <CardTitle className="text-lg text-slate-900">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -185,6 +194,7 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
                   variant="outline" 
                   size="sm"
                   onClick={() => window.open(`mailto:${employee.email}`, '_blank')}
+                  className="border-slate-300 hover:bg-slate-50"
                 >
                   <Mail className="mr-2 h-4 w-4" />
                   Send Email
@@ -194,6 +204,7 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
                   variant="outline" 
                   size="sm"
                   onClick={() => onEdit?.(employee)}
+                  className="border-slate-300 hover:bg-slate-50"
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Details
@@ -221,6 +232,7 @@ const EmployeeDetails = ({ employee, open, onClose, onEdit }) => {
                     link.download = `${employee.name.replace(/\s+/g, '_')}_profile.json`;
                     link.click();
                   }}
+                  className="border-slate-300 hover:bg-slate-50"
                 >
                   Export Profile
                 </Button>

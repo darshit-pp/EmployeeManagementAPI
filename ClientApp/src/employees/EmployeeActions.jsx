@@ -8,57 +8,54 @@ import {
   Trash2, 
   Eye, 
   Mail, 
-  Phone, 
   UserCheck, 
   UserX,
   Download,
   Copy
 } from 'lucide-react';
-import { useDeleteEmployee, useUpdateEmployee } from '@/hooks/useEmployees';
-import { useToast } from '@/hooks/useToast';
+import { deleteEmployee, updateEmployee } from '@/services/api/api-employee';
+import { toast } from 'react-hot-toast';
 
-const EmployeeActions = ({ employee, onEdit, onView, compact = false }) => {
+const EmployeeActions = ({ employee, onEdit, onView, onDelete, compact = false }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
-  
-  const { toast } = useToast();
-  const deleteEmployee = useDeleteEmployee();
-  const updateEmployee = useUpdateEmployee();
+  const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async () => {
+    setDeleting(true);
     try {
-      await deleteEmployee.mutateAsync(employee.employeeId);
+      await deleteEmployee(employee.employeeId);
+      toast.success('Employee deleted successfully!');
       setShowDeleteDialog(false);
+      onDelete?.();
     } catch (error) {
-      console.error('Error deleting employee:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete employee');
+    } finally {
+      setDeleting(false);
     }
   };
 
   const handleStatusToggle = async () => {
+    setUpdating(true);
     try {
-      await updateEmployee.mutateAsync({
-        id: employee.employeeId,
-        data: {
-          ...employee,
-          status: !employee.status,
-        },
+      await updateEmployee(employee.employeeId, {
+        ...employee,
+        status: !employee.status,
       });
+      toast.success(`Employee ${employee.status ? 'deactivated' : 'activated'} successfully!`);
       setShowStatusDialog(false);
-      toast({
-        title: "Status Updated",
-        description: `Employee ${employee.status ? 'deactivated' : 'activated'} successfully.`,
-      });
+      onDelete?.(); // Refresh the list
     } catch (error) {
-      console.error('Error updating employee status:', error);
+      toast.error(error.response?.data?.message || 'Failed to update employee status');
+    } finally {
+      setUpdating(false);
     }
   };
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(employee.email);
-    toast({
-      title: "Email Copied",
-      description: "Employee email copied to clipboard.",
-    });
+    toast.success('Email copied to clipboard!');
   };
 
   const handleSendEmail = () => {
@@ -83,6 +80,7 @@ const EmployeeActions = ({ employee, onEdit, onView, compact = false }) => {
     link.href = url;
     link.download = `${employee.name.replace(/\s+/g, '_')}_profile.json`;
     link.click();
+    toast.success('Profile exported successfully!');
   };
 
   if (compact) {
@@ -172,9 +170,9 @@ const EmployeeActions = ({ employee, onEdit, onView, compact = false }) => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+       <AlertDialogContent className="w-[30rem] bg-white border-slate-200 shadow-xl">
+      <AlertDialogHeader className="border-b border-slate-100 pb-4">
+        <AlertDialogTitle className="text-xl font-semibold text-slate-900">Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete <strong>{employee.name}</strong> from the system. 
               This action cannot be undone.
@@ -185,39 +183,38 @@ const EmployeeActions = ({ employee, onEdit, onView, compact = false }) => {
             <AlertDialogAction 
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
-              disabled={deleteEmployee.isPending}
+              disabled={deleting}
             >
-              {deleteEmployee.isPending ? 'Deleting...' : 'Delete'}
+              {deleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Status Change Confirmation Dialog */}
-      <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {employee.status ? 'Deactivate' : 'Activate'} Employee
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to {employee.status ? 'deactivate' : 'activate'} <strong>{employee.name}</strong>?
-              {employee.status && ' They will no longer have access to company systems.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleStatusToggle}
-              disabled={updateEmployee.isPending}
-            >
-              {updateEmployee.isPending ? 'Updating...' : 'Confirm'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
+     {/* Status Change Confirmation Dialog */}
+  <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+    <AlertDialogContent className="w-[30rem] bg-white border-slate-200 shadow-xl">
+      <AlertDialogHeader className="border-b border-slate-100 pb-4">
+        <AlertDialogTitle className="text-xl font-semibold text-slate-900">
+          {employee.status ? 'Deactivate' : 'Activate'} Employee
+        </AlertDialogTitle>
+        <AlertDialogDescription className="text-xl font-semibold text-slate-900">
+          Are you sure you want to {employee.status ? 'deactivate' : 'activate'} <strong>{employee.name}</strong>?
+          {employee.status && ' They will no longer have access to company systems.'}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction 
+          onClick={handleStatusToggle}
+          disabled={updating}
+        >
+          {updating ? 'Updating...' : 'Confirm'}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+</>
+);
 };
-
 export default EmployeeActions;

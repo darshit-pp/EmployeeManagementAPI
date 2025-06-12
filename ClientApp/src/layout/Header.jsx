@@ -1,31 +1,56 @@
-import { Bell, Search, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useLocation } from 'react-router-dom';
+import { Calendar, Clock } from 'lucide-react';
 
 const Header = () => {
+  const location = useLocation();
+  
+  const getPageTitle = () => {
+    switch (location.pathname) {
+      case '/': return 'Dashboard';
+      case '/employees': return 'Employees';
+      case '/departments': return 'Departments';
+      case '/analytics': return 'Analytics';
+      default: return 'Employee Management';
+    }
+  };
+
+  const getCurrentDate = () => {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getCurrentTime = () => {
+    return new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-slate-200 px-8 py-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">{getPageTitle()}</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Manage your workforce efficiently
+          </p>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search employees..."
-              className="pl-10 w-80"
-            />
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4 text-sm text-slate-600">
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-4 h-4" />
+              <span>{getCurrentDate()}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Clock className="w-4 h-4" />
+              <span>{getCurrentTime()}</span>
+            </div>
           </div>
-          
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-          </Button>
-          
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
-          </Button>
         </div>
       </div>
     </header>

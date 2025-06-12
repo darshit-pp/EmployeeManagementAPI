@@ -8,7 +8,7 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="bg-white border-slate-200 shadow-soft hover:shadow-glow transition-all duration-300">
         <CardContent className="p-8 text-center space-y-6">
           {/* 404 Illustration */}
           <div className="text-6xl font-bold text-gray-300">404</div>
